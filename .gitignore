@@ -13,3 +13,6 @@ coverage/
 *.log
 logs/
 data/
+
+# opencode md file
+AGENTS.md
