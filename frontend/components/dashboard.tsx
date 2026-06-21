@@ -1,11 +1,50 @@
+"use client";
+
 import { Activity, AlertTriangle, Bot, FileText, Globe2, Search, TrendingUp } from "lucide-react";
-import type React from "react";
+import * as React from "react";
 
 import { label, toneClass } from "@/lib/format";
 import type { DashboardData } from "@/lib/types";
 import { Panel, Pill, ScoreBar } from "@/components/ui";
 
 export function Dashboard({ data }: { data: DashboardData }) {
+  const [question, setQuestion] = React.useState("");
+  const [answer, setAnswer] = React.useState<string | null>(null);
+  const [citations, setCitations] = React.useState<any[]>([]);
+  const [confidence, setConfidence] = React.useState<number | null>(null);
+  const [loading, setLoading] = React.useState(false);
+
+  const handleAsk = async () => {
+    if (!question.trim()) return;
+    setLoading(true);
+    setAnswer(null);
+    setCitations([]);
+    setConfidence(null);
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1"}/chat`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question }),
+        }
+      );
+      if (response.ok) {
+        const res = await response.json();
+        setAnswer(res.answer);
+        setConfidence(res.confidence);
+        setCitations(res.citations || []);
+      } else {
+        setAnswer("Failed to generate response. Please try again later.");
+      }
+    } catch (err) {
+      console.error(err);
+      setAnswer("Network error. Make sure the backend server is running.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const positiveEvents = data.events.filter((event) => event.sentiment === "POSITIVE").length;
   const negativeEvents = data.events.filter((event) => event.sentiment === "NEGATIVE").length;
   const avgConfidence = Math.round(
@@ -111,13 +150,45 @@ export function Dashboard({ data }: { data: DashboardData }) {
                 <div className="rounded-md border border-line bg-panel p-3 text-sm text-slate-700">
                   Ask evidence-backed questions such as “Which companies benefit from lower crude oil?”
                 </div>
+                {answer && (
+                  <div className="rounded-md border border-line bg-white p-3 text-sm shadow-soft">
+                    <p className="text-slate-800 font-medium">{answer}</p>
+                    {confidence !== null && (
+                      <div className="mt-2 text-xs text-slate-500 font-medium">
+                        Confidence: {confidence}%
+                      </div>
+                    )}
+                    {citations.length > 0 && (
+                      <div className="mt-3 border-t border-line pt-2">
+                        <span className="text-xs font-semibold text-slate-600 block mb-1">Citations:</span>
+                        <div className="space-y-1">
+                          {citations.map((cite, idx) => (
+                            <div key={idx} className="text-xs text-slate-500">
+                              · {cite.source}: <span className="italic">"{cite.title}"</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
                 <div className="flex gap-2">
                   <input
                     className="h-10 min-w-0 flex-1 rounded-md border border-line px-3 text-sm outline-none focus:border-info"
-                    placeholder="Ask about events, risks, sectors..."
+                    placeholder={loading ? "Thinking..." : "Ask about events, risks, sectors..."}
+                    value={question}
+                    onChange={(e) => setQuestion(e.target.value)}
+                    disabled={loading}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleAsk();
+                    }}
                   />
-                  <button className="inline-flex h-10 items-center rounded-md bg-info px-3 text-sm font-medium text-white">
-                    Ask
+                  <button
+                    className="inline-flex h-10 items-center rounded-md bg-info px-3 text-sm font-medium text-white disabled:opacity-50"
+                    onClick={handleAsk}
+                    disabled={loading}
+                  >
+                    {loading ? "Thinking..." : "Ask"}
                   </button>
                 </div>
               </div>

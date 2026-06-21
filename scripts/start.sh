@@ -20,11 +20,15 @@ warn()  { printf "${YELLOW}%s${NC}\n" "$*"; }
 error() { printf "${RED}%s${NC}\n" "$*"; exit 1; }
 
 # ── Prerequisites ──────────────────────────────────────────────
-command -v python3 >/dev/null 2>&1 || error "python3 is required"
+PYTHON=python3
+if command -v python3.13 >/dev/null 2>&1; then
+  PYTHON=python3.13
+fi
+command -v $PYTHON >/dev/null 2>&1 || error "python is required"
 command -v node    >/dev/null 2>&1 || error "node is required"
 command -v npm     >/dev/null 2>&1 || error "npm is required"
 
-PY_VER=$(python3 --version 2>&1 | cut -d' ' -f2)
+PY_VER=$($PYTHON --version 2>&1 | cut -d' ' -f2)
 PY_MAJOR=$(echo "$PY_VER" | cut -d'.' -f1)
 PY_MINOR=$(echo "$PY_VER" | cut -d'.' -f2)
 [[ $PY_MAJOR -ge 3 && $PY_MINOR -ge 13 ]] || error "Python 3.13+ required (found $PY_VER)"
@@ -40,7 +44,7 @@ info "Setting up backend..."
 cd "$ROOT/backend"
 
 if [[ ! -d .venv ]]; then
-  python3 -m venv .venv
+  $PYTHON -m venv .venv
 fi
 if [[ ! -f .venv/.installed ]]; then
   .venv/bin/pip install -e ".[dev]" --quiet

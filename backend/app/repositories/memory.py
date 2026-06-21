@@ -40,6 +40,13 @@ class IntelligenceRepository:
         self.documents[document.document_id] = document
         return document
 
+    def find_document_by_checksum(self, checksum: str) -> NormalizedDocument | None:
+        return next(
+            (doc for doc in self.documents.values() if doc.checksum == checksum),
+            None,
+        )
+
+
     def list_documents(self) -> list[NormalizedDocument]:
         return sorted(self.documents.values(), key=lambda item: item.published_at, reverse=True)
 

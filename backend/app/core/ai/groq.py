@@ -52,9 +52,12 @@ class GroqClient(BaseAIClient):
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
 
+        import json
+        schema_json = json.dumps(response_model.model_json_schema(), indent=2)
         format_instruction = (
-            "Respond with valid JSON that matches the required schema. "
-            "Do not include any text outside the JSON object."
+            "You MUST respond with a valid JSON object matching the required JSON Schema below.\n"
+            f"JSON Schema:\n{schema_json}\n\n"
+            "Do not include any extra text, comments, markdown blocks, or formatting outside of the JSON object."
         )
         combined_prompt = f"{prompt}\n\n{format_instruction}"
         messages.append({"role": "user", "content": combined_prompt})

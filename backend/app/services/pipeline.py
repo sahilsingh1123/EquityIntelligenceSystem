@@ -32,6 +32,12 @@ class IntelligencePipeline:
 
     def ingest_document(self, payload: DocumentCreate) -> NormalizedDocument:
         document = self.normalizer.normalize(payload)
+
+        # Skip duplicate documents
+        existing = self.repository.find_document_by_checksum(document.checksum)
+        if existing:
+            return existing
+
         self.repository.add_document(document)
 
         for event in self.extractor.extract(document):

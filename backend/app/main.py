@@ -1,8 +1,19 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.router import api_router
 from app.core.config import settings
+from app.tasks.scheduler import start_scheduler, shutdown_scheduler
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup actions
+    start_scheduler()
+    yield
+    # Shutdown actions
+    shutdown_scheduler()
 
 
 def create_app() -> FastAPI:
@@ -10,6 +21,7 @@ def create_app() -> FastAPI:
         title=settings.app_name,
         version=settings.app_version,
         description="Event-centric equity intelligence API for Indian equities.",
+        lifespan=lifespan,
     )
 
     app.add_middleware(
@@ -30,3 +42,4 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
+

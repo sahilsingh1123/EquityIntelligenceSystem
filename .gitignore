@@ -16,3 +16,9 @@ data/
 
 # opencode md file
 AGENTS.md
+
+# Frontend specific files
+package-lock.json
+next-env.d.ts
+.env.local
+.env.*.local
